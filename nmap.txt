@@ -1,0 +1,142 @@
+Starting Nmap 7.94SVN ( https://nmap.org ) at 2024-05-01 16:33 CEST
+NSE: Loaded 156 scripts for scanning.
+NSE: Script Pre-scanning.
+NSE: Starting runlevel 1 (of 3) scan.
+Initiating NSE at 16:33
+Completed NSE at 16:33, 0.00s elapsed
+NSE: Starting runlevel 2 (of 3) scan.
+Initiating NSE at 16:33
+Completed NSE at 16:33, 0.00s elapsed
+NSE: Starting runlevel 3 (of 3) scan.
+Initiating NSE at 16:33
+Completed NSE at 16:33, 0.01s elapsed
+Initiating Ping Scan at 16:33
+Scanning 10.200.105.200 [4 ports]
+Completed Ping Scan at 16:33, 0.06s elapsed (1 total hosts)
+Initiating SYN Stealth Scan at 16:33
+Scanning thomaswreath.thm (10.200.105.200) [5 ports]
+Discovered open port 443/tcp on 10.200.105.200
+Discovered open port 22/tcp on 10.200.105.200
+Discovered open port 80/tcp on 10.200.105.200
+Discovered open port 10000/tcp on 10.200.105.200
+Completed SYN Stealth Scan at 16:33, 0.06s elapsed (5 total ports)
+Initiating Service scan at 16:33
+Scanning 4 services on thomaswreath.thm (10.200.105.200)
+Completed Service scan at 16:33, 12.33s elapsed (4 services on 1 host)
+Initiating OS detection (try #1) against thomaswreath.thm (10.200.105.200)
+Retrying OS detection (try #2) against thomaswreath.thm (10.200.105.200)
+NSE: Script scanning 10.200.105.200.
+NSE: Starting runlevel 1 (of 3) scan.
+Initiating NSE at 16:33
+Completed NSE at 16:34, 30.35s elapsed
+NSE: Starting runlevel 2 (of 3) scan.
+Initiating NSE at 16:34
+Completed NSE at 16:34, 1.60s elapsed
+NSE: Starting runlevel 3 (of 3) scan.
+Initiating NSE at 16:34
+Completed NSE at 16:34, 0.00s elapsed
+Nmap scan report for thomaswreath.thm (10.200.105.200)
+Host is up, received echo-reply ttl 63 (0.039s latency).
+Scanned at 2024-05-01 16:33:36 CEST for 48s
+
+PORT      STATE  SERVICE    REASON         VERSION
+22/tcp    open   ssh        syn-ack ttl 63 OpenSSH 8.0 (protocol 2.0)
+| ssh-hostkey: 
+|   3072 9c:1b:d4:b4:05:4d:88:99:ce:09:1f:c1:15:6a:d4:7e (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfKbbFLiRV9dqsrYQifAghp85qmXpYEHf2g4JJqDKUL316TcAoGj62aamfhx5isIJHtQsA0hVmzD+4pVH4r8ANkuIIRs6j9cnBrLGpjk8xz9+BE1Vvd8lmORGxCqTv+9LgrpB7tcfoEkIOSG7zeY182kOR72igUERpy0JkzxJm2gIGb7Caz1s5/ScHEOhGX8VhNT4clOhDc9dLePRQvRooicIsENqQsLckE0eJB7rTSxemWduL+twySqtwN80a7pRzS7dzR4f6fkhVBAhYflJBW3iZ46zOItZcwT2u0wReCrFzxvDxEOewH7YHFpvOvb+Exuf3W6OuSjCHF64S7iU6z92aINNf+dSROACXbmGnBhTlGaV57brOXzujsWDylivWZ7CVVj1gB6mrNfEpBNE983qZskyVk4eTNT5cUD+3I/IPOz1bOtOWiraZCevFYaQR5AxNmx8sDIgo1z4VcxOMhrczc7RC/s3KWcoIkI2cI5+KUnDtaOfUClXPBCgYE50=
+|   256 93:55:b4:d9:8b:70:ae:8e:95:0d:c2:b6:d2:03:89:a4 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFccvYHwpGWYUsw9mTk/mEvzyrY4ghhX2D6o3n/upTLFXbhJPV6ls4C8O0wH6TyGq7ClV3XpVa7zevngNoqlwzM=
+|   256 f0:61:5a:55:34:9b:b7:b8:3a:46:ca:7d:9f:dc:fa:12 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINLfVtZHSGvCy3JP5GX0Dgzcxz+Y9In0TcQc3vhvMXCP
+80/tcp    open   http       syn-ack ttl 63 Apache httpd 2.4.37 ((centos) OpenSSL/1.1.1c)
+|_http-server-header: Apache/2.4.37 (centos) OpenSSL/1.1.1c
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Did not follow redirect to https://thomaswreath.thm
+443/tcp   open   ssl/http   syn-ack ttl 63 Apache httpd 2.4.37 ((centos) OpenSSL/1.1.1c)
+| tls-alpn: 
+|_  http/1.1
+|_ssl-date: TLS randomness does not represent time
+|_http-title: Thomas Wreath | Developer
+|_http-server-header: Apache/2.4.37 (centos) OpenSSL/1.1.1c
+| ssl-cert: Subject: commonName=thomaswreath.thm/organizationName=Thomas Wreath Development/stateOrProvinceName=East Riding Yorkshire/countryName=GB/localityName=Easingwold/emailAddress=me@thomaswreath.thm
+| Issuer: commonName=thomaswreath.thm/organizationName=Thomas Wreath Development/stateOrProvinceName=East Riding Yorkshire/countryName=GB/localityName=Easingwold/emailAddress=me@thomaswreath.thm
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2024-05-01T13:25:17
+| Not valid after:  2025-05-01T13:25:17
+| MD5:   ad9a:722b:c740:1c7e:343e:bf56:e821:cc29
+| SHA-1: b89f:7ac5:2ac5:a547:06e2:699c:04ac:d904:d7b9:85ee
+| -----BEGIN CERTIFICATE-----
+| MIIELTCCAxWgAwIBAgIURBmwDx3GPu4OfrkcN0en3CHwxjcwDQYJKoZIhvcNAQEL
+| BQAwgaUxCzAJBgNVBAYTAkdCMR4wHAYDVQQIDBVFYXN0IFJpZGluZyBZb3Jrc2hp
+| cmUxEzARBgNVBAcMCkVhc2luZ3dvbGQxIjAgBgNVBAoMGVRob21hcyBXcmVhdGgg
+| RGV2ZWxvcG1lbnQxGTAXBgNVBAMMEHRob21hc3dyZWF0aC50aG0xIjAgBgkqhkiG
+| 9w0BCQEWE21lQHRob21hc3dyZWF0aC50aG0wHhcNMjQwNTAxMTMyNTE3WhcNMjUw
+| NTAxMTMyNTE3WjCBpTELMAkGA1UEBhMCR0IxHjAcBgNVBAgMFUVhc3QgUmlkaW5n
+| IFlvcmtzaGlyZTETMBEGA1UEBwwKRWFzaW5nd29sZDEiMCAGA1UECgwZVGhvbWFz
+| IFdyZWF0aCBEZXZlbG9wbWVudDEZMBcGA1UEAwwQdGhvbWFzd3JlYXRoLnRobTEi
+| MCAGCSqGSIb3DQEJARYTbWVAdGhvbWFzd3JlYXRoLnRobTCCASIwDQYJKoZIhvcN
+| AQEBBQADggEPADCCAQoCggEBAMePx0fAHJ9+41Qh5M9SK/IdWEUeF8sNx3FwuF1w
+| 1z+InaBkcWZ3OOj9SVFIbNH8lFDJRsWApdL+UJg30zHiw0nfixIv9sc5qAI7Rv5c
+| 18at2ki17019KrhG3sSPvM508jNY7KWPnmGK7r5B44uWAfb+voAdJ/YPeC6A2Yjq
+| 2Z1/5tm/ykBq17zabdFiR2XE5jIkieCsVV0SA3U463kOHA7PICdUHyn5hX1KJ/lV
+| 2dNBU/zgAqs1XI8O6NX18nAe/M1n4E2/zVSHP5ju/VrmgCft9Y4VWEYRCScGQA51
+| mKYaluI26uZwSqLVd7ytm+Nt4S6nNJJr8Ndu4Vcia7hPROECAwEAAaNTMFEwHQYD
+| VR0OBBYEFN/HhHcXrUL/pnOzbXmUULGO8qcZMB8GA1UdIwQYMBaAFN/HhHcXrUL/
+| pnOzbXmUULGO8qcZMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEB
+| ABG68L/R0+ZGD8mFgXIzrWs1pD1BYygu9Lopn/hSqC0hznVnfoN4YNBgSByXVbqQ
+| QzaxFuQ/TwFvps5Iwl4z7p3Tct8B48QIWoMduv/Xn3pskh2AbHCTyyPhLKthnQF7
+| NakJUEvAZ/krSl1puKBLTiNdnAWPnd1VGYfGGDxz71SLVtIODFN9+XwCwSs3dlqs
+| 2febnzlws4JT13E68FrWvnsScMB8YS1I0SOupOMVtVdIIwZTryZzz7xUNw7MPZ+T
+| 2SIjFqV0QgnpIMXj5MWpXhahIHAD7wmOr0WG2YG+lOW04EHOtE4p7WUlpIQGODap
+| 2UJQpWefttcBcZUhYEZrYUo=
+|_-----END CERTIFICATE-----
+| http-methods: 
+|   Supported Methods: OPTIONS HEAD GET POST TRACE
+|_  Potentially risky methods: TRACE
+9090/tcp  closed zeus-admin reset ttl 63
+10000/tcp open   http       syn-ack ttl 63 MiniServ 1.890 (Webmin httpd)
+|_http-favicon: Unknown favicon MD5: 6814D36328760734008F451568E84862
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Site doesn't have a title (text/html; Charset=iso-8859-1).
+OS fingerprint not ideal because: Didn't receive UDP response. Please try again with -sSU
+Aggressive OS guesses: HP P2000 G3 NAS device (89%), Linux 2.6.32 (88%), Linux 2.6.32 - 3.1 (88%), Infomir MAG-250 set-top box (88%), Ubiquiti AirMax NanoStation WAP (Linux 2.6.32) (88%), Linux 3.7 (88%), Linux 5.0 (88%), Linux 5.0 - 5.4 (88%), Linux 5.1 (88%), Ubiquiti AirOS 5.5.9 (88%)
+No exact OS matches for host (test conditions non-ideal).
+TCP/IP fingerprint:
+SCAN(V=7.94SVN%E=4%D=5/1%OT=22%CT=9090%CU=%PV=Y%G=N%TM=663252F0%P=x86_64-pc-linux-gnu)
+SEQ(SP=104%GCD=1%ISR=10A%TI=Z%CI=Z%II=I%TS=A)
+SEQ(SP=107%GCD=1%ISR=10B%TI=Z%CI=Z%TS=A)
+OPS(O1=M509ST11NW7%O2=M509ST11NW7%O3=M509NNT11NW7%O4=M509ST11NW7%O5=M509ST11NW7%O6=M509ST11)
+WIN(W1=68DF%W2=68DF%W3=68DF%W4=68DF%W5=68DF%W6=68DF)
+ECN(R=Y%DF=Y%TG=40%W=6903%O=M509NNSNW7%CC=Y%Q=)
+T1(R=Y%DF=Y%TG=40%S=O%A=S+%F=AS%RD=0%Q=)
+T2(R=N)
+T3(R=N)
+T4(R=Y%DF=Y%TG=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)
+T5(R=Y%DF=Y%TG=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)
+T6(R=Y%DF=Y%TG=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)
+T7(R=N)
+U1(R=N)
+IE(R=Y%DFI=N%TG=40%CD=S)
+
+Uptime guess: 5.535 days (since Fri Apr 26 03:43:21 2024)
+TCP Sequence Prediction: Difficulty=260 (Good luck!)
+IP ID Sequence Generation: All zeros
+
+NSE: Script Post-scanning.
+NSE: Starting runlevel 1 (of 3) scan.
+Initiating NSE at 16:34
+Completed NSE at 16:34, 0.00s elapsed
+NSE: Starting runlevel 2 (of 3) scan.
+Initiating NSE at 16:34
+Completed NSE at 16:34, 0.00s elapsed
+NSE: Starting runlevel 3 (of 3) scan.
+Initiating NSE at 16:34
+Completed NSE at 16:34, 0.00s elapsed
+Read data files from: /usr/bin/../share/nmap
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 48.68 seconds
+           Raw packets sent: 65 (6.256KB) | Rcvd: 41 (7.918KB)
